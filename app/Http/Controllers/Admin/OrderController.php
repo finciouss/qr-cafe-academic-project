@@ -18,7 +18,6 @@ class OrderController extends Controller
         return view('admin.orders.index', compact('orders'));
     }
 
-   
     public function history(Request $request)
     {
         $search = $request->get('search');
@@ -53,7 +52,6 @@ class OrderController extends Controller
         return view('admin.orders.history', compact('orders', 'search', 'status', 'paymentMethod', 'date', 'stats'));
     }
 
-  
     public function show($id)
     {
         $order = Order::findOrFail($id);
@@ -63,6 +61,10 @@ class OrderController extends Controller
     public function confirm($id)
     {
         $order = Order::findOrFail($id);
+        
+        // If it's a digital payment and not paid yet, we might want to prevent manual confirmation
+        // But for "Bayar di Kasir", admin still needs to confirm.
+        
         $order->status = 'processing';
         $order->save();
 

@@ -71,13 +71,18 @@
                     <td class="px-6 py-4">
                         <div class="flex items-center space-x-2">
                             @if($order->status === 'pending')
-                                <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" 
-                                            class="text-orange-600 hover:text-orange-800 font-medium">
-                                        Konfirmasi
-                                    </button>
-                                </form>
+                                @if($order->payment_method === 'QR Code' && $order->transaction_status !== 'settlement')
+                                    <span class="text-xs text-orange-500 font-medium italic">Menunggu Pembayaran Midtrans</span>
+                                @else
+                                    <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" 
+                                                class="text-orange-600 hover:text-orange-800 font-medium"
+                                                onclick="return confirm('Konfirmasi pesanan ini?')">
+                                            Konfirmasi
+                                        </button>
+                                    </form>
+                                @endif
                             @elseif($order->status === 'processing')
                                 <form action="{{ route('admin.orders.complete', $order->id) }}" method="POST" class="inline">
                                     @csrf

@@ -15,23 +15,8 @@
         
         <div id="paymentForm">
             @csrf
-            <!-- Kartu Kredit/Debit -->
-            <!-- <label class="block bg-white border-2 rounded-lg p-5 mb-4 cursor-pointer hover:border-orange-500 transition payment-option" data-value="credit_card">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <input type="radio" 
-                               name="payment_method" 
-                               value="credit_card" 
-                               class="w-5 h-5 text-orange-500 focus:ring-orange-500 payment-radio">
-                        <span class="ml-3 font-semibold">Kartu Kredit/Debit</span>
-                    </div>
-                    <div class="payment-indicator w-5 h-5 border-2 border-gray-300 rounded-full flex items-center justify-center">
-                        <div class="w-3 h-3 bg-orange-500 rounded-full hidden indicator-dot"></div>
-                    </div>
-                </div>
-            </label> -->
-
-            <!-- QR Code -->
+            
+            <!-- QR Code (Midtrans) -->
             <label class="block bg-white border-2 rounded-lg p-5 mb-4 cursor-pointer hover:border-orange-500 transition payment-option" data-value="digital_wallet">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
@@ -39,7 +24,7 @@
                                name="payment_method" 
                                value="digital_wallet"
                                class="w-5 h-5 text-orange-500 focus:ring-orange-500 payment-radio">
-                        <span class="ml-3 font-semibold">QR Code</span>
+                        <span class="ml-3 font-semibold">QR Code (Midtrans / QRIS)</span>
                     </div>
                     <div class="payment-indicator w-5 h-5 border-2 border-gray-300 rounded-full flex items-center justify-center">
                         <div class="w-3 h-3 bg-orange-500 rounded-full hidden indicator-dot"></div>
@@ -80,6 +65,7 @@
 
     <!-- Confirm Button -->
     <button onclick="confirmPayment()" 
+            id="pay-button"
             class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 rounded-lg transition">
         Konfirmasi Pembayaran
     </button>
@@ -116,6 +102,13 @@
     </div>
 </div>
 
+@php
+    $midtransClientKey = config('midtrans.client_key');
+@endphp
+
+<!-- Midtrans Snap -->
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ $midtransClientKey }}"></script>
+
 <script>
 // Update visual indicator when payment method is selected
 document.querySelectorAll('.payment-radio').forEach(radio => {
@@ -146,10 +139,15 @@ function confirmPayment() {
         return;
     }
 
+    const payButton = document.getElementById('pay-button');
+    payButton.disabled = true;
+    payButton.innerHTML = 'Memproses...';
+
     // Create FormData
     const formData = new FormData();
     formData.append('payment_method', paymentMethod.value);
 
+    // 1. Create Order First
     fetch('{{ route("process.payment") }}', {
         method: 'POST',
         headers: {
@@ -160,21 +158,76 @@ function confirmPayment() {
     .then(response => response.json())
     .then(data => {
         if(data.success) {
-            // Update order number in modal
-            document.getElementById('orderNumber').textContent = '#' + data.order_number;
-            
-            // Show modal
-            const modal = document.getElementById('successModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            const orderId = data.order_id; // Database ID
+            const orderNumber = data.order_number;
+
+            // If method is digital_wallet, call Snap
+            if (paymentMethod.value === 'digital_wallet') {
+                getSnapToken(orderId, orderNumber);
+            } else {
+                // Cash -> Show Success Modal directly
+                showSuccessModal(orderNumber);
+            }
         } else {
             alert(data.message || 'Terjadi kesalahan. Silakan coba lagi.');
+            resetButton();
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Terjadi kesalahan. Silakan coba lagi.');
+        resetButton();
     });
+}
+
+function getSnapToken(orderId, orderNumber) {
+    fetch('{{ route("payment.snap-token") }}?order_id=' + orderId)
+    .then(response => response.json())
+    .then(data => {
+        if (data.snap_token) {
+            // Trigger Snap Popup
+            snap.pay(data.snap_token, {
+                onSuccess: function(result) {
+                    // Payment success -> show success modal
+                    showSuccessModal(orderNumber);
+                },
+                onPending: function(result) {
+                    // Waiting for payment -> show success modal or redirect
+                    showSuccessModal(orderNumber);
+                },
+                onError: function(result) {
+                    alert("Pembayaran gagal!");
+                    resetButton();
+                },
+                onClose: function() {
+                    alert('Anda menutup popup pembayaran tanpa menyelesaikan pembayaran');
+                    resetButton();
+                }
+            });
+        } else {
+            alert('Gagal mendapatkan token pembayaran');
+            resetButton();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Gagal memproses pembayaran');
+        resetButton();
+    });
+}
+
+function showSuccessModal(orderNumber) {
+    document.getElementById('orderNumber').textContent = '#' + orderNumber;
+    const modal = document.getElementById('successModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    resetButton();
+}
+
+function resetButton() {
+    const payButton = document.getElementById('pay-button');
+    payButton.disabled = false;
+    payButton.innerHTML = 'Konfirmasi Pembayaran';
 }
 
 // Close modal when clicking outside

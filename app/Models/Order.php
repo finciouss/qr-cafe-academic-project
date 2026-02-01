@@ -19,6 +19,10 @@ class Order extends Model
         'total',
         'status',
         'payment_method',
+        'midtrans_order_id',
+        'snap_token',
+        'transaction_id',
+        'transaction_status',
         'items',
     ];
 

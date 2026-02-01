@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\CartController;
@@ -22,6 +23,8 @@ Route::get('/konfirmasi-pesanan', [CartController::class, 'confirmation'])->name
 Route::post('/proceed-to-payment', [CartController::class, 'proceedToPayment'])->name('proceed.payment');
 Route::get('/detail-pembayaran', [CartController::class, 'paymentDetail'])->name('payment.detail');
 Route::post('/process-payment', [CartController::class, 'processPayment'])->name('process.payment');
+Route::get('/payment/snap-token', [PaymentController::class, 'getSnapToken'])->name('payment.snap-token');
+Route::post('/payment/webhook', [PaymentController::class, 'webhook'])->name('payment.webhook');
 
 // Other routes
 Route::get('/tentang-kami', function () {
