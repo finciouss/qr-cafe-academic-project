@@ -1,35 +1,82 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# QR Cafe Project Documentation
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Table of Contents
+1. [Project Overview](#project-overview)
+2. [Tech Stack](#tech-stack)
+3. [Architecture](#architecture)
+4. [Backend Documentation](#backend-documentation)
+5. [Frontend & UI/UX](#frontend--uiux)
+6. [Payment Integration (Midtrans)](#payment-integration-midtrans)
+7. [Database Schema](#database-schema)
+8. [Setup & Deployment](#setup--deployment)
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Project Overview
+**QR Cafe** is a web-based ordering system designed for cafes. It allows customers to browse the menu, add items to a cart, and pay directly via QRIS (Midtrans) without logging in. The system also includes a comprehensive Admin Dashboard for managing menu items, orders, and viewing sales statistics.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tech Stack
+*   **Framework:** Laravel 12 (PHP)
+*   **Frontend:** Blade Templates, TailwindCSS (via CDN/local build), JavaScript (Alpine.js/Vanilla)
+*   **Database:** MySQL
+*   **Payment Gateway:** Midtrans (Snap API)
+*   **Server Environment:** PHP 8.2+, Composer, Node.js (for asset compilation)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Architecture
+The project follows the standard **MVC (Model-View-Controller)** pattern provided by Laravel.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+*   **Models:** Handle database interactions (Eloquent ORM).
+*   **Views:** Blade templates for rendering UI.
+*   **Controllers:** Handle business logic and request processing.
+*   **Routes:** Defined in `routes/web.php`.
+*   **Middleware:** `AdminMiddleware` for role-based access control.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Backend Documentation
+For detailed backend documentation, please refer to the specific files in the `docs/` directory:
+
+1.  **[Backend Developer Guide](docs/backend-developer.md)**: Technical details on controllers, routing, data models, and server-side logic.
+2.  **[Roles & Permissions](docs/backend-roles.md)**: Explanation of the RBAC system (Guest vs. Admin vs. System).
+
+### Key Features
+*   **Session-Based Cart:** Guests can shop without creating an account.
+*   **Order Number Generation:** Auto-incrementing daily order numbers (e.g., `ORD-20231027-001`).
+*   **Admin Dashboard:** Secure area for staff to manage operations.
+
+---
+
+## Frontend & UI/UX
+The frontend is built using **Blade Templates** integrated with **TailwindCSS**.
+
+### Public Pages
+*   **Home:** Landing page with featured items.
+*   **Menu:** Full product list with category filtering.
+*   **Cart:** Manage selected items.
+*   **Checkout:** Enter customer details (Name, Table Number, WhatsApp).
+*   **Payment:** Midtrans Snap popup for payment execution.
+
+### Admin Pages
+*   **Login:** Secure entry point.
+*   **Dashboard:** Statistics overview.
+*   **Menu Management:** Forms for adding/editing products and uploading images.
+*   **Order Management:** Lists for active and historical orders with status controls.
+
+---
+
+## Payment Integration (Midtrans)
+The system uses **Midtrans Snap** for seamless payments.
+
+### Workflow
+1.  **Token Generation:** When a user clicks "Pay", `PaymentController@getSnapToken` calls Midtrans API to get a `snap_token`.
+2.  **Popup:** The Snap.js library uses the token to show the payment popup.
+3.  **Payment:** User completes payment (QRIS, E-Wallet, etc.).
+4.  **Webhook:** Midtrans sends a POST request to `/payment/webhook`.
+5.  **Status Update:** The webhook handler verifies the signature and updates the local order status to `'paid'`.
 
 ### Premium Partners
 
